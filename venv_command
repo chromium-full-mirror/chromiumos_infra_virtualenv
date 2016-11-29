@@ -1,0 +1,38 @@
+#!/bin/bash
+# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Run a command in a virtualenv environment.
+#
+# $ venv_command path/to/venv command [args...]
+set -eu
+
+main() {
+  if [[ $# -lt 2 ]]; then
+    print_help >&2
+    exit 1
+  fi
+
+  local venv_dir=$1
+  shift 1
+
+  activate_venv "$venv_dir"
+  exec "$@"
+}
+
+print_help() {
+  echo "Usage: $0 path/to/venv command [args...]
+
+Run a command in a Python virtualenv environment."
+}
+
+activate_venv() {
+  local venv_dir=$1
+  set +u  # activate script relies on unset variables.
+  # shellcheck source=/dev/null
+  . "$venv_dir/bin/activate"
+  set -u
+}
+
+main "$@"

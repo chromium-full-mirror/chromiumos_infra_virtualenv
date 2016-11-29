@@ -1,0 +1,78 @@
+#!/bin/bash
+# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Create or update a virtualenv.
+#
+# $ create_venv path/to/venv path/to/requirements.txt
+set -eu
+
+basedir=$(readlink -f "$(dirname "${BASH_SOURCE[0]}" )")
+pkgdir="$basedir/pip_packages"
+
+main() {
+  if [[ $# -ne 2 ]]; then
+    print_help >&2
+    exit 1
+  fi
+
+  local venv_dir=$1
+  local requirements=$2
+  local lock="$venv_dir/.create_venv.lock"
+
+  mkdir -p "$venv_dir"
+  (
+    # Try to acquire a lock for 90 seconds.
+    if ! flock -w 90 9; then
+      echo 'Failed to acquire lock on virtualenv' >&2
+      exit 1
+    fi
+    if up_to_date "$venv_dir" "$requirements"; then
+      echo "Existing virtualenv $venv_dir is already up to date"
+    else
+      echo "Creating or updating virtualenv in $venv_dir"
+      init_venv "$venv_dir"
+      install_packages_in_venv "$venv_dir" "$requirements"
+      mark_up_to_date "$venv_dir" "$requirements"
+    fi
+  ) 9>"$lock"
+}
+
+print_help() {
+  echo "Usage: $0 path/to/venv path/to/requirements.txt
+
+Create or update a Python virtualenv."
+}
+
+up_to_date() {
+  local venv_dir=$1
+  local requirements=$2
+  local installed="$venv_dir/.installed.txt"
+  cmp -s "$requirements" "$installed"
+}
+
+mark_up_to_date() {
+  local venv_dir=$1
+  local requirements=$2
+  local installed="$venv_dir/.installed.txt"
+  cp "$requirements" "$installed"
+}
+
+init_venv() {
+  local venv_dir=$1
+  virtualenv "$venv_dir" --extra-search-dir="$pkgdir"
+}
+
+install_packages_in_venv() {
+  local venv_dir=$1
+  local requirements=$2
+  venv_command "$venv_dir" \
+               pip install --no-index -f "$pkgdir" -r "$requirements"
+}
+
+venv_command() {
+  "$basedir/venv_command" "$@"
+}
+
+main "$@"
