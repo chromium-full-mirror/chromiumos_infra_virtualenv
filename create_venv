@@ -49,14 +49,14 @@ up_to_date() {
   local venv_dir=$1
   local requirements=$2
   local installed="$venv_dir/.installed.txt"
-  cmp -s "$requirements" "$installed"
+  cmp -s <("$basedir/expand_reqs.py" <"$requirements") "$installed"
 }
 
 mark_up_to_date() {
   local venv_dir=$1
   local requirements=$2
   local installed="$venv_dir/.installed.txt"
-  cp "$requirements" "$installed"
+  "$basedir/expand_reqs.py" <"$requirements" >"$installed"
 }
 
 init_venv() {
