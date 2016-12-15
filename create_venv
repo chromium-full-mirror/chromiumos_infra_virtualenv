@@ -9,7 +9,7 @@
 set -eu
 
 basedir=$(readlink -f "$(dirname "${BASH_SOURCE[0]}" )")
-pkgdir="$basedir/pip_packages"
+pkgdir="file://$basedir/pip_packages"
 
 main() {
   if [[ $# -ne 2 ]]; then
