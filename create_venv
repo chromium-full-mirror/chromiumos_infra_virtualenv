@@ -61,7 +61,13 @@ mark_up_to_date() {
 
 init_venv() {
   local venv_dir=$1
-  virtualenv "$venv_dir" --extra-search-dir="$pkgdir"
+  # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
+  # requires specifying --setuptools, else distribute is used (which
+  # is deprecated).  virtualenv after 1.10 supports setuptools by
+  # default.  virtualenv >1.10 accepts --setuptools but does not
+  # document it.  Once we no longer have any hosts on virtualenv 1.7,
+  # --setuptools can be removed.
+  virtualenv "$venv_dir" --extra-search-dir="$pkgdir" --setuptools
 }
 
 install_packages_in_venv() {
