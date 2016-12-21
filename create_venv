@@ -53,24 +53,23 @@ up_to_date() {
   local venv_dir=$1
   local requirements=$2
   local installed="$venv_dir/.installed.txt"
-  (
-    for dep in "${base_deps[@]}"; do
-      echo "$dep"
-    done
-    cat "$requirements"
-  ) | "$basedir/expand_reqs.py" 2>/dev/null | cmp -s - "$installed"
+  print_reqs "$requirements" | cmp -s - "$installed"
 }
 
 mark_up_to_date() {
   local venv_dir=$1
   local requirements=$2
   local installed="$venv_dir/.installed.txt"
-  : > "$installed"
-  local dep
+  print_reqs "$requirements" > "$installed"
+}
+
+print_reqs() {
+  local requirements=$1
+
   for dep in "${base_deps[@]}"; do
-    echo "$dep" >> "$installed"
+    echo "$dep"
   done
-  "$basedir/expand_reqs.py" <"$requirements" >>"$installed"
+  "$basedir/expand_reqs.py" <"$requirements" 2>/dev/null
 }
 
 init_venv() {
