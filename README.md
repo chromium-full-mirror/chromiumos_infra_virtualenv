@@ -22,25 +22,28 @@ For example for chromite, from within `chromite/virtualenv`, run:
 Wrapper scripts
 ---------------
 
-This repository contains two scripts for working with Python virtualenvs.
+`create_venv` creates or updates a virtualenv using a
+`requirements.txt` file.
 
-`venv_command` runs a command in a virtualenv environment.  This is more
-convenient than having to start a shell and source `bin/activate`.
-For example, to start Python inside the virtualenv:
+    $ create_venv .venv requirements.txt
 
-    $ venv_command path/to/venv python
+To run the virtualenv python, use:
 
-`create_venv` creates or updates a virtualenv using a `requirements.txt` file.
+    $ .venv/bin/python
 
-    $ create_venv path/to/venv path/to/requirements.txt
+NOTE: it is not generally safe to run the other scripts in `.venv/bin`
+due to the hard-coded paths in the virtualenv.  Instead of running
+`.venv/bin/pip` for example, use `.venv/bin/python -m pip`.
 
 Here’s a complete example:
 
-    $ echo mock=2.0.0 > requirements.txt
-    $ ./create_venv venv requirements.txt
-    $ ./venv_command venv python
+    $ echo mock==2.0.0 > requirements.txt
+    $ ./create_venv .venv requirements.txt
+    $ .venv/bin/python
     Python 2.7.6 (default, Jun 22 2015, 17:58:13)
     [GCC 4.8.2] on linux2
     Type "help", "copyright", "credits" or "license" for more information.
+    >>> import sys
+    >>> sys.prefix  # This points to the virtualenv now
+    '/usr/local/google/home/ayatane/src/chromiumos/infra_virtualenv/.venv'
     >>> import mock
-    >>>

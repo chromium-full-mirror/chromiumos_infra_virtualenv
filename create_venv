@@ -96,12 +96,8 @@ install_packages_in_venv() {
 venv_pip_install() {
   local venv_dir=$1
   shift 1
-  venv_command "$venv_dir" \
-               pip install --no-index -f "file://$pkgdir" "$@"
-}
-
-venv_command() {
-  "$basedir/venv_command" "$@"
+  "$venv_dir/bin/python" \
+      -m pip install --no-index -f "file://$pkgdir" "$@"
 }
 
 main "$@"

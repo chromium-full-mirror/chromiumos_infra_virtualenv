@@ -6,6 +6,10 @@
 # Run a command in a virtualenv environment.
 #
 # $ venv_command path/to/venv command [args...]
+#
+# Note: This is deprecated in favor of running the virtualenv python directly:
+#
+# $ path/to/venv/bin/python
 set -eu
 
 main() {
