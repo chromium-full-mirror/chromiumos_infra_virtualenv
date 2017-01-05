@@ -27,8 +27,8 @@ main() {
 
   mkdir -p "$venv_dir"
   (
-    # Try to acquire a lock for 90 seconds.
-    if ! flock -w 90 9; then
+    # Try to acquire a lock for 3 minutes
+    if ! flock -w 180 9; then
       echo 'Failed to acquire lock on virtualenv' >&2
       exit 1
     fi
