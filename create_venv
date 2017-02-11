@@ -1,103 +1,14 @@
 #!/bin/bash
-# Copyright 2016 The Chromium OS Authors. All rights reserved.
+# Copyright 2017 The Chromium OS Authors. All rights reserved.
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 #
 # Create or update a virtualenv.
 #
-# $ create_venv path/to/venv path/to/requirements.txt
+# $ create_venv path/to/venv path/to/requirements.txt [path/to/custom.pth]
+#
+# See the cros_venv Python package for details, or pass the --help
+# option.
 set -eu
-
 basedir=$(readlink -f "$(dirname "${BASH_SOURCE[0]}" )")
-pkgdir="$basedir/pip_packages"
-# base_deps are pip requirements automatically included in every
-# virtualenv so we have control over which versions of bootstrap
-# packages are installed.
-base_deps=( setuptools==28.2.0 pip==8.1.2 )
-
-main() {
-  if [[ $# -ne 2 ]]; then
-    print_help >&2
-    exit 1
-  fi
-
-  local venv_dir=$1
-  local requirements=$2
-  local lock="$venv_dir/.create_venv.lock"
-
-  mkdir -p "$venv_dir"
-  (
-    # Try to acquire a lock for 3 minutes
-    if ! flock -w 180 9; then
-      echo 'Failed to acquire lock on virtualenv' >&2
-      exit 1
-    fi
-    if up_to_date "$venv_dir" "$requirements"; then
-      echo "Existing virtualenv $venv_dir is already up to date"
-    else
-      echo "Creating or updating virtualenv in $venv_dir"
-      init_venv "$venv_dir"
-      install_packages_in_venv "$venv_dir" "$requirements"
-      mark_up_to_date "$venv_dir" "$requirements"
-    fi
-  ) 9>"$lock"
-}
-
-print_help() {
-  echo "Usage: $0 path/to/venv path/to/requirements.txt
-
-Create or update a Python virtualenv."
-}
-
-up_to_date() {
-  local venv_dir=$1
-  local requirements=$2
-  local installed="$venv_dir/.installed.txt"
-  print_reqs "$requirements" | cmp -s - "$installed"
-}
-
-mark_up_to_date() {
-  local venv_dir=$1
-  local requirements=$2
-  local installed="$venv_dir/.installed.txt"
-  print_reqs "$requirements" > "$installed"
-}
-
-print_reqs() {
-  local requirements=$1
-
-  for dep in "${base_deps[@]}"; do
-    echo "$dep"
-  done
-  "$basedir/expand_reqs.py" <"$requirements" 2>/dev/null
-}
-
-init_venv() {
-  local venv_dir=$1
-  # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
-  # requires specifying --setuptools, else distribute is used (which
-  # is deprecated).  virtualenv after 1.10 supports setuptools by
-  # default.  virtualenv >1.10 accepts --setuptools but does not
-  # document it.  Once we no longer have any hosts on virtualenv 1.7,
-  # --setuptools can be removed.
-  virtualenv "$venv_dir" --extra-search-dir="$pkgdir" --setuptools
-}
-
-install_packages_in_venv() {
-  local venv_dir=$1
-  local requirements=$2
-  local dep
-  for dep in "${base_deps[@]}"; do
-    venv_pip_install "$venv_dir" "$dep"
-  done
-  venv_pip_install "$venv_dir" -r "$requirements"
-}
-
-venv_pip_install() {
-  local venv_dir=$1
-  shift 1
-  "$venv_dir/bin/python" \
-      -m pip install --no-index -f "file://$pkgdir" "$@"
-}
-
-main "$@"
+PYTHONPATH="$basedir" /usr/bin/python -m cros_venv "$@"
