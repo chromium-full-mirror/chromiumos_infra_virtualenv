@@ -44,6 +44,10 @@ class Venv(object):
     def _installed_reqs_file(self):
         return os.path.join(self._venv_dir, '.installed.txt')
 
+    def _lock(self):
+        """Return lock context for the virtualenv."""
+        return flock.FileLock(self._lock_file)
+
     @property
     def _site_packages(self):
         return os.path.join(
@@ -53,7 +57,7 @@ class Venv(object):
     def ensure(self):
         """Create or update virtualenv."""
         _makedirs_exist_ok(self._venv_dir)
-        with flock.FileLock(self._lock_file):
+        with self._lock():
             if not self._venv_initialized():
                 self._init_venv()
             if not self._reqs_up_to_date():
