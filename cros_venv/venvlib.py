@@ -12,6 +12,7 @@ import itertools
 import os
 import shutil
 import subprocess
+import sys
 
 import cros_venv
 from cros_venv import flock
@@ -45,7 +46,9 @@ class Venv(object):
 
     @property
     def _site_packages(self):
-        return os.path.join(self._venv_dir, 'lib', 'python2.7', 'site-packages')
+        return os.path.join(
+            self._venv_dir, 'lib', 'python%s' % sys.version[:3],
+            'site-packages')
 
     def ensure(self):
         """Create or update virtualenv."""
