@@ -65,7 +65,8 @@ class Venv(object):
 
     def _venv_initialized(self):
         """Check if virtualenv is initialized."""
-        return os.path.exists(self._venv_python)
+        return all(os.path.exists(path)
+                   for path in (self._venv_python, self._site_packages))
 
     def _init_venv(self):
         """Initialize virtualenv."""
