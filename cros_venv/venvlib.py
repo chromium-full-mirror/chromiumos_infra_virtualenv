@@ -55,25 +55,20 @@ class Venv(object):
         """Return lock context for the virtualenv."""
         return flock.FileLock(self._lock_file)
 
-    @property
-    def _site_packages(self):
-        return os.path.join(
-            self._venv_dir, 'lib', 'python%s' % sys.version[:3],
-            'site-packages')
-
     def ensure(self):
         """Create or update virtualenv."""
         _makedirs_exist_ok(self._venv_dir)
         with self._lock():
-            if not (self._venv_initialized() and self._venv_python_matches()):
+            if not self._venv_initialized():
                 self._init_venv()
             if not self._reqs_up_to_date():
                 self._install_reqs()
 
     def _venv_initialized(self):
-        """Check if virtualenv is initialized."""
-        return all(os.path.exists(path)
-                   for path in (self._venv_python, self._site_packages))
+        """Check if virtualenv is initialized properly."""
+        return (
+            os.path.exists(self._venv_python)
+            and (_py_version(self._venv_python) == _py_version(_VENV_PY)))
 
     def _init_venv(self):
         """Initialize virtualenv."""
@@ -89,16 +84,6 @@ class Venv(object):
             # longer have any hosts on virtualenv 1.7, the --setuptools
             # option can be removed.
             '--setuptools'])
-
-    def _venv_python_matches(self):
-        """Check if the Python version in virtualenv matches what we want.
-
-        If the virtualenv Python doesn't exist (hasn't been set up yet),
-        return False.
-        """
-        if not os.path.exists(self._venv_python):
-            return False
-        return _py_version(self._venv_python) == _py_version(_VENV_PY)
 
     def _reqs_up_to_date(self):
         """Return whether the virtualenv reqs file is up to date."""
