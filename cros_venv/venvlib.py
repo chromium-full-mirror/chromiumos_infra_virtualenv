@@ -26,6 +26,12 @@ _VENV_PY = '/usr/bin/python2.7'
 _BASE_DEPENDENCIES = ('setuptools==28.2.0', 'pip==8.1.2')
 
 
+def _py_version(path):
+    """Get the version of the given Python binary."""
+    return subprocess.check_output(
+        [path, '-V'], stderr=subprocess.STDOUT).decode()
+
+
 class Venv(object):
     """Wraps all operations on a virtualenv directory."""
 
@@ -59,7 +65,7 @@ class Venv(object):
         """Create or update virtualenv."""
         _makedirs_exist_ok(self._venv_dir)
         with self._lock():
-            if not self._venv_initialized():
+            if not (self._venv_initialized() and self._venv_python_matches()):
                 self._init_venv()
             if not self._reqs_up_to_date():
                 self._install_reqs()
@@ -83,6 +89,16 @@ class Venv(object):
             # longer have any hosts on virtualenv 1.7, the --setuptools
             # option can be removed.
             '--setuptools'])
+
+    def _venv_python_matches(self):
+        """Check if the Python version in virtualenv matches what we want.
+
+        If the virtualenv Python doesn't exist (hasn't been set up yet),
+        return False.
+        """
+        if not os.path.exists(self._venv_python):
+            return False
+        return _py_version(self._venv_python) == _py_version(_VENV_PY)
 
     def _reqs_up_to_date(self):
         """Return whether the virtualenv reqs file is up to date."""
