@@ -26,12 +26,6 @@ _VENV_PY = '/usr/bin/python2.7'
 _BASE_DEPENDENCIES = ('setuptools==28.2.0', 'pip==8.1.2')
 
 
-def _py_version(path):
-    """Get the version of the given Python binary."""
-    return subprocess.check_output(
-        [path, '-V'], stderr=subprocess.STDOUT).decode()
-
-
 class Venv(object):
     """Wraps all operations on a virtualenv directory."""
 
@@ -66,9 +60,7 @@ class Venv(object):
 
     def _venv_initialized(self):
         """Check if virtualenv is initialized properly."""
-        return (
-            os.path.exists(self._venv_python)
-            and (_py_version(self._venv_python) == _py_version(_VENV_PY)))
+        return os.path.exists(self._venv_python)
 
     def _init_venv(self):
         """Initialize virtualenv."""
