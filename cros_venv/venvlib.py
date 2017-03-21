@@ -17,7 +17,7 @@ import sys
 from cros_venv import constants
 from cros_venv import flock
 
-_PACKAGE_DIR = os.path.join(constants.WORKTREE_DIR, 'pip_packages')
+_PACKAGE_DIR = os.path.join(constants.REPO_DIR, 'pip_packages')
 _VENV_PY = '/usr/bin/python2.7'
 
 # BASE_DEPENDENCIES are pip requirements automatically included in every
