@@ -4,7 +4,10 @@
 
 """Create or update a virtualenv.
 
-See __init__.py for how to run this module.
+$ python -m cros_venv path/to/venv path/to/requirements.txt
+
+This creates a virtualenv at path/to/venv with the given requirements
+installed.
 """
 
 from __future__ import absolute_import

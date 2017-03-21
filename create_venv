@@ -5,7 +5,7 @@
 #
 # Create or update a virtualenv.
 #
-# $ create_venv path/to/venv path/to/requirements.txt [path/to/custom.pth]
+# $ create_venv path/to/venv path/to/requirements.txt
 #
 # See the cros_venv Python package for details, or pass the --help
 # option.

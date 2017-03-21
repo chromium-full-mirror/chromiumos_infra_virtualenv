@@ -1,0 +1,15 @@
+#!/bin/bash
+# Copyright 2017 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Create or update a virtualenv.
+#
+# $ create_venv path/to/requirements.txt
+#
+# This creates a versioned virtualenv with the given requirements
+# installed.  The path to the created virtualenv is printed to stdout.
+set -eu
+basedir=$(readlink -f -- "$(dirname -- "${BASH_SOURCE[0]}" )")
+venvdir=$(cd "$basedir"; cd ..; pwd)
+PYTHONPATH="$venvdir" /usr/bin/python2.7 -m cros_venv.scripts.create_venv "$@"

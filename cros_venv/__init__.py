@@ -4,13 +4,5 @@
 
 """This package contains modules for creating and updating virtualenvs.
 
-To run:
-
-    $ python2 -m venv
-
-See __main__.py for details.
-
-To run the tests:
-
-    $ python2 -m unittest discover venv
+To run the tests, use the script bin/run_tests.
 """

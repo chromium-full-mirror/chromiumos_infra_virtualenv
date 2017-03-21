@@ -9,23 +9,25 @@
 # sourcing script should cd into the directory containing this script
 # first.  This script defines functions for performing common tasks:
 #
-# exec_python -- Execute Python module inside of virtualenv
+# exec_python_module -- Execute Python module inside of virtualenv
+#
+# This script is a canonical template that can be copied to other
+# repositories.  The venv_repo variable should be changed to point to
+# this repository.
 set -eu
 
 realpath() {
     readlink -f -- "$1"
 }
 
-readonly virtualenv_dir=$(realpath ..)
-readonly venv_dir=$(realpath ../venv/.venv)
-readonly reqs_file=$(realpath ../venv/requirements.txt)
-
-_create_venv() {
-    "$virtualenv_dir/create_venv" "$venv_dir" "$reqs_file" >&2
-}
+# venv_repo should be changed if this script is copied to other repos.
+readonly venv_repo=$(realpath ..)
+readonly create_script=$(realpath "$venv_repo/bin/create_venv")
+readonly venv_home=$(realpath ../venv)
+readonly reqs_file=$(realpath "$venv_home/requirements.txt")
 
 exec_python_module() {
-    _create_venv
-    export PYTHONPATH='../venv'
-    exec "$venv_dir/bin/python" -m "$@"
+    venvdir=$("$create_script" "$reqs_file")
+    export PYTHONPATH=$venv_home
+    exec "$venvdir/bin/python" -m "$@"
 }
