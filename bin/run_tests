@@ -4,6 +4,7 @@
 # found in the LICENSE file.
 set -eu
 cd -- "$(readlink -e -- "$(dirname -- "$0")")"
+. ./find_virtualenv.sh
 cd ..
 find . -name "*.pyc" -print0 | xargs -0 rm
-python2 -m unittest discover cros_venv
+exec_python_module unittest discover cros_venv
