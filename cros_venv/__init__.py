@@ -14,8 +14,3 @@ To run the tests:
 
     $ python2 -m unittest discover venv
 """
-
-import os
-
-PACKAGE_DIR = os.path.abspath(__path__[0])
-WORKTREE_DIR = os.path.dirname(PACKAGE_DIR)
