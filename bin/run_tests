@@ -6,7 +6,7 @@ set -eu
 cd -- "$(readlink -e -- "$(dirname -- "$0")")"
 . ./find_virtualenv.sh
 cd ..
-find . -name "*.pyc" -print0 | xargs -0 rm
+find . -name "*.pyc" -print0 | xargs -0 rm -f
 while getopts v name; do
     case $name in
         v) verbose=1;;
