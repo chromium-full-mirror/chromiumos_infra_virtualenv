@@ -7,4 +7,11 @@ cd -- "$(readlink -e -- "$(dirname -- "$0")")"
 . ./find_virtualenv.sh
 cd ..
 find . -name "*.pyc" -print0 | xargs -0 rm
-exec_python_module unittest discover cros_venv
+while getopts v name; do
+    case $name in
+        v) verbose=1;;
+        ?) printf "Usage: %s: [-v]\n" "$0" >&2; exit 2;;
+    esac
+done
+
+exec_python_module unittest discover "${verbose:+-v}" -s cros_venv
