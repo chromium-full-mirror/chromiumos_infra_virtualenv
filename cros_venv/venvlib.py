@@ -277,7 +277,8 @@ def _create_venv(venvdir, logfile):
     # does not document it.  Once we no longer have any hosts on
     # virtualenv 1.7, the --setuptools option can be removed.
     command = ['virtualenv', venvdir, '-p', _VENV_PY,
-               '--extra-search-dir', _PACKAGE_DIR, '--setuptools']
+               '--extra-search-dir', _PACKAGE_DIR, '--setuptools',
+               '--clear']
     _log_check_call(command, logfile=logfile)
 
 
