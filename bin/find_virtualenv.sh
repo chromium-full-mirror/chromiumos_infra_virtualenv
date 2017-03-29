@@ -22,12 +22,12 @@ realpath() {
 
 # venv_repo should be changed if this script is copied to other repos.
 readonly venv_repo=$(realpath ..)
-readonly create_script=$(realpath "$venv_repo/bin/create_venv")
+readonly create_script=$(realpath "${venv_repo}/bin/create_venv")
 readonly venv_home=$(realpath ../venv)
-readonly reqs_file=$(realpath "$venv_home/requirements.txt")
+readonly reqs_file=$(realpath "${venv_home}/requirements.txt")
 
 exec_python_module() {
-    venvdir=$("$create_script" "$reqs_file")
-    export PYTHONPATH=$venv_home
-    exec "$venvdir/bin/python" -m "$@"
+    venvdir=$("${create_script}" "$reqs_file")
+    export PYTHONPATH=${venv_home}
+    exec "${venvdir}/bin/python" -m "$@"
 }
