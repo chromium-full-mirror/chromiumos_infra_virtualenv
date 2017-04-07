@@ -27,4 +27,4 @@ import cros_venv
 _CROS_VENV_DIR = os.path.abspath(cros_venv.__path__[0])
 
 # Root directory of infra_virtualenv repo
-REPO_DIR = os.path.dirname(_CROS_VENV_DIR)
+REPO_DIR = os.path.abspath(os.path.join(_CROS_VENV_DIR, '..', '..'))

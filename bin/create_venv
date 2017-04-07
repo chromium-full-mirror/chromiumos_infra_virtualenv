@@ -11,5 +11,5 @@
 # installed.  The path to the created virtualenv is printed to stdout.
 set -eu
 basedir=$(readlink -f -- "$(dirname -- "${BASH_SOURCE[0]}" )")
-venvdir=$(cd "$basedir"; cd ..; pwd)
-PYTHONPATH="$venvdir" /usr/bin/python2.7 -m cros_venv.scripts.create_venv "$@"
+venvdir=$(cd "${basedir}"; cd ../venv; pwd)
+PYTHONPATH="${venvdir}" /usr/bin/python2.7 -m cros_venv.scripts.create_venv "$@"

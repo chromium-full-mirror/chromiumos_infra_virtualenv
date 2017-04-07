@@ -11,4 +11,4 @@
 # option.
 set -eu
 basedir=$(readlink -f "$(dirname "${BASH_SOURCE[0]}" )")
-PYTHONPATH="$basedir" /usr/bin/python -m cros_venv "$@"
+PYTHONPATH="$basedir/venv" /usr/bin/python -m cros_venv "$@"
