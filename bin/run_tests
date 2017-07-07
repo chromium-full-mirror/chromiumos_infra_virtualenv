@@ -6,9 +6,9 @@
 # Run unit tests.
 set -eu
 
-cd -- "$(readlink -e -- "$(dirname -- "$0")")"
-. ./find_virtualenv.sh
-cd ../venv
+readonly bin_dir="$(readlink -e -- "$(dirname -- "$0")")"
+
+cd "${bin_dir}/../venv"
 
 find . -name "*.pyc" -print0 | xargs -0 rm -f
 while getopts v name; do
@@ -18,4 +18,4 @@ while getopts v name; do
     esac
 done
 
-exec_python_module unittest discover "${verbose:+-v}" -s cros_venv
+exec "${bin_dir}/python_venv" -m unittest discover "${verbose:+-v}" -s cros_venv

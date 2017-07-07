@@ -9,9 +9,6 @@
 # repositories.
 set -eu
 
-original=$(pwd)
-cd -- "$(readlink -e -- "$(dirname -- "$0")")"
-. ./find_virtualenv.sh
-cd -- "$original"
+readonly bin_dir="$(readlink -e -- "$(dirname -- "$0")")"
 
-exec_python_module turtle "$@"
+exec "${bin_dir}/python_venv" -m turtle "$@"

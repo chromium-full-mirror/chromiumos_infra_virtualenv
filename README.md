@@ -14,8 +14,7 @@ virtualenv for running unit tests.
    directory will be importable inside the virtualenv.
 2. Create a `requirements.txt` file inside `venv` to list external
    packages to install.
-3. Copy `bin/find_virtualenv.sh` and `bin/turtle` which serve as
-   templates.
+3. Copy `bin/python_venv` and `bin/turtle` which serve as templates.
 
 Adding pre-built packages
 -------------------------
@@ -29,10 +28,10 @@ Commit the changes and make a CL.
 Low level API
 -------------
 
-The `create_venv` script prepares a virtualenv using a
+The `bin/create_venv` script prepares a virtualenv using a
 `requirements.txt` file.
 
-    $ create_venv requirements.txt
+    $ bin/create_venv requirements.txt
 
 The script will print the path to the virtualenv to stdout.  Note that
 the output ends with a newline; Bash handles this, but Python does
@@ -43,7 +42,7 @@ directory.
 
 Together, this might look up:
 
-    $ venv=$(create_venv requirements.txt)
+    $ venv=$(bin/create_venv requirements.txt)
     $ ${venv}/bin/python
 
 NOTE: it is not generally safe to run the other scripts in the
