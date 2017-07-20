@@ -8,9 +8,8 @@
 # This script will set up a virtualenv when it has not been created yet and
 # executes the Python interpreter.
 #
-# This script is a canonical template that can be copied to other
-# repositories. The infra_virtualenv_path variable should be changed to point
-# to this repository.
+# The canonical version of this script is in infra_virtualenv repository.
+# See infra_virtualenv/README.md about how to adopt virtualenv to your project.
 
 set -eu
 
