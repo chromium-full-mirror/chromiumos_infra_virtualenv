@@ -2,7 +2,23 @@
 # Use of this source code is governed by a BSD-style license that can be
 # found in the LICENSE file.
 
-"""Lock files"""
+"""Lock files.
+
+Please read:
+
+fcntl(2)
+flock(2)
+lockf(3)
+http://pubs.opengroup.org/onlinepubs/9699919799/functions/lockf.html
+http://pubs.opengroup.org/onlinepubs/9699919799/functions/fcntl.html
+https://github.com/python/cpython/blob/2.7/Modules/fcntlmodule.c
+
+Informal references:
+
+http://0pointer.de/blog/projects/locking.html
+https://www.samba.org/samba/news/articles/low_point/tale_two_stds_os2.html
+http://chris.improbable.org/2010/12/16/everything-you-never-wanted-to-know-about-file-locking/
+"""
 
 from __future__ import absolute_import
 from __future__ import print_function
@@ -17,6 +33,118 @@ import time
 
 
 logger = logging.getLogger(__name__)
+
+
+class FileLock(object):
+    """Context manager for an exclusive file lock.
+
+    This uses fcntl() locks for portability.  Refer to the module
+    docstring and the links therein for details that informed this
+    choice.
+
+    fcntl() locks have a number of important quirks:
+
+    This may or may not work if the lock is on a remote filesystem.
+
+    Locks are per-process and therefore not thread-safe.
+
+    The lock is bound to the file inode:
+
+    >>> tmp = getfixture('tmpdir')
+    >>> f1 = str(tmp.join('lock'))
+    >>> f2 = str(tmp.join('lock2'))
+    >>> with FileLock(f1):
+    ...     os.link(f1, f2)
+    ...     f = open(f2)  # Same inode
+    ...     f.close()     # This will release the lock
+    ...     # Stuff here will run without the lock
+    """
+
+    def __init__(self, lockfile, timeout=180):
+        """Initialize instance.
+
+        Args:
+            lockfile: Path to lockfile
+            timeout: Timeout for grabbing lock, in seconds
+        """
+        self._lockfile = lockfile
+        self._timeout = timeout
+        self._fd = None
+
+    def __enter__(self):
+        timeout = time.time() + self._timeout
+        # Wait for possible symlink locks and open lock file.
+        while True:
+            if not self._symlink_lock_present():
+                try:
+                    self._fd = os.open(self._lockfile,
+                                       os.O_RDWR | os.O_CREAT,
+                                       0666)
+                    break
+                except OSError as e:  # pragma: no cover
+                    logger.debug('Error opening lock file: %s', e)
+            if time.time() > timeout:
+                raise TimeoutError(self._lockfile, self._timeout)
+            time.sleep(random.random())
+
+        # Grab lock on file.
+        while True:
+            try:
+                fcntl.lockf(self._fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            except IOError as e:
+                logger.debug('Error acquiring lock: %s', e)
+            else:
+                return
+            if time.time() > timeout:
+                raise TimeoutError(self._lockfile, self._timeout)
+            time.sleep(random.random())
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        os.close(self._fd)
+
+    def _symlink_lock_present(self):
+        """Check if an old style symlink lock is in place."""
+        # TODO(ayatane): 2017-08-21 Old symlink lock file handling can
+        # be removed after the code has existed for Long Enough that
+        # there aren't reasonably any instances of it left on developer
+        # or prod machines.
+        try:
+            target = os.readlink(self._lockfile)
+        except OSError as e:
+            if e.errno == errno.EINVAL:
+                # Not a symlink.
+                return False
+            elif e.errno == errno.ENOENT:
+                # Lock is gone.
+                return False
+            else:  # pragma: no cover
+                raise
+        pid = _procdir.getpid(target)
+        if _is_pid_running(pid):
+            return True
+        try:
+            os.unlink(self._lockfile)
+        except OSError as e:  # pragma: no cover
+            if e.errno != errno.ENOENT:
+                raise
+        return False
+
+
+class TimeoutError(Exception):
+    """Grabbing lock timed out."""
+
+    def __init__(self, filename, timeout):
+        super(TimeoutError, self).__init__(filename, timeout)
+        self.filename = filename
+        self.timeout = timeout
+
+    def __str__(self):
+        return ('Grabbing lock %(filename)s'
+                ' timed out after %(timeout)s seconds'
+                % {
+                    'filename': self.filename,
+                    'timeout': self.timeout,
+                })
 
 
 class _ProcDir(object):
@@ -46,88 +174,3 @@ def _is_pid_running(pid):
         return e.errno != errno.ESRCH
     else:
         return True
-
-
-class FileLock(object):
-    """Context manager for an exclusive file lock."""
-
-    def __init__(self, lockfile, timeout=180):
-        """Initialize instance.
-
-        Args:
-            lockfile: Path to lockfile
-            timeout: Timeout for grabbing lock, in seconds.
-        """
-        self._lockfile = lockfile
-        self._timeout = timeout
-
-    @property
-    def _proc_path(self):
-        return _procdir.getpath(os.getpid())
-
-    def __enter__(self):
-        self._acquire_lock()
-        return self
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        self._release_lock()
-
-    def _acquire_lock(self):
-        """Try to acquire lock within timeout."""
-        timeout = time.time() + self._timeout
-        self._clean_stale_lock()
-        while True:
-            try:
-                os.symlink(self._proc_path, self._lockfile)
-            except OSError as e:
-                logger.warning('Error acquiring lock: %s', e)
-            else:
-                return
-            if time.time() > timeout:
-                break
-            time.sleep(random.random())
-        raise Exception('Trying to acquire lock %r timed out.'
-                        % (self._lockfile,))
-
-    def _release_lock(self):
-        """Release own lock."""
-        if os.readlink(self._lockfile) != self._proc_path:
-            logger.warning('Lockfile %s does not belong to this process',
-                           self._lockfile)
-        else:
-            os.unlink(self._lockfile)
-
-    def _clean_stale_lock(self):
-        """Clean up stale locks."""
-        # TODO(ayatane): Old flock(2) lock file handling can be removed
-        # after the code has existed for Long Enough that there aren't
-        # reasonably any instances of it left on developer or prod
-        # machines.
-        self._clean_flock_lock()
-        self._clean_orphaned_lock()
-
-    def _clean_flock_lock(self):
-        """Clean up old flock(2)-based lock."""
-        if self._is_lock_flock():
-            logger.warning('Removing old style lock file')
-            os.unlink(self._lockfile)
-
-    def _clean_orphaned_lock(self):
-        """Clean up orphaned lock."""
-        if self._is_lock_orphaned():
-            logger.warning('Removing orphaned lock')
-            os.unlink(self._lockfile)
-
-    def _is_lock_flock(self):
-        """Return True if old flock(2) lock exists."""
-        return (os.path.isfile(self._lockfile)
-                and not os.path.islink(self._lockfile))
-
-    def _is_lock_orphaned(self):
-        """Return True if lock is orphaned."""
-        return (os.path.islink(self._lockfile)
-                and not _is_pid_running(self._get_lock_pid()))
-
-    def _get_lock_pid(self):
-        """Return pid of current lock file as int."""
-        return _procdir.getpid(os.readlink(self._lockfile))

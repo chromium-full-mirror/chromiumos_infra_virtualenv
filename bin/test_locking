@@ -1,0 +1,43 @@
+#!/bin/bash
+# Copyright 2017 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+#
+# Test locking.
+set -eu
+basedir=$(readlink -f -- "$(dirname -- "${BASH_SOURCE[0]}")")
+cd "${basedir}"
+
+venv_path=$(./create_venv ../venv/requirements.txt)
+case "${venv_path}" in
+  ~/.cache/cros_venv/*)
+    rm -rf "${venv_path}"
+    ;;
+  *)
+    printf "\
+test_locking: create_venv returned a suspicious path: %s
+test_locking: refusing to run rm -rf
+" "${venv_path}" >&2
+    exit 1
+    ;;
+esac
+
+for _ in {1..5}; do
+  ./create_venv ../venv/requirements.txt >/dev/null &
+done
+for _ in {1..30}; do
+  ./create_venv ../venv/requirements.txt >/dev/null &
+  sleep 0.01
+done
+
+for pid in $(jobs -p); do
+  if wait "$pid"; then
+    printf "test_locking: %d okay\n" "${pid}" >&2
+  else
+    printf "test_locking: %d failed\n" "${pid}" >&2
+    echo FAIL
+    exit 1
+  fi
+done
+
+echo OK

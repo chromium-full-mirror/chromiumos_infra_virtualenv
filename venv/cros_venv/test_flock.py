@@ -6,26 +6,37 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
+import contextlib
 import errno
 import fcntl
 import logging
-import mock
 import os
 import unittest
+
+import mock
+import subprocess32
 
 from cros_venv import testcases
 from cros_venv import flock
 
-
-_nullhandler = logging.NullHandler()
+logger = logging.getLogger(__name__)
+_log_handler = None
 
 
 def setUpModule():
-    flock.logger.addHandler(_nullhandler)
+    global _log_handler
+    root = logging.getLogger()
+    root.setLevel(logging.DEBUG)
+    _log_handler = logging.StreamHandler()
+    _log_handler.setFormatter(logging.Formatter(
+        '%(asctime)s:%(levelname)s:%(message)s'))
+    root.addHandler(_log_handler)
 
 
 def tearDownModule():
-    flock.logger.removeHandler(_nullhandler)
+    root = logging.getLogger()
+    root.removeHandler(_log_handler)
+    root.setLevel(logging.WARNING)
 
 
 class ProcDirTestCase(unittest.TestCase):
@@ -64,120 +75,83 @@ class IsPidRunningTestCase(unittest.TestCase):
 
 
 class FileLockTestCase(testcases.TmpdirTestCase):
-    """Tests for flock."""
+    """Tests for flock (provide code coverage, not full functional testing)."""
 
-    def test_symlink_fail(self):
-        """Test that symlink raises OSError when it already exists."""
-        os.symlink('tmp', 'foo')
-        with self.assertRaises(OSError):
-            os.symlink('tmp', 'foo')
-
-    def test_FileLock(self):
-        """Test that FileLock acquires and releases lock."""
-        self.assertFalse(os.path.lexists('lockfile'))
+    def test_happy_path(self):
+        """Test happy path."""
         with flock.FileLock('lockfile', timeout=0):
-            self.assertTrue(os.path.lexists('lockfile'))
-        self.assertFalse(os.path.lexists('lockfile'))
+            pass
 
-    def test_FileLock_proc_target(self):
-        """Test that FileLock lock points to process /proc."""
-        with flock.FileLock('lockfile', timeout=0):
-            self.assertEqual(os.readlink('lockfile'),
-                             '/proc/' + str(os.getpid()))
+    def test_other_process_has_lock(self):
+        """Test with other process holding lock."""
+        logger.debug('Starting test')
+        with _lock('lockfile'):
+            with self.assertRaises(flock.TimeoutError):
+                with flock.FileLock('lockfile', timeout=0):
+                    pass  # pragma: no cover
 
-    def test_FileLock_timeout(self):
-        """Test that FileLock raises exception on timeout."""
-        os.symlink('tmp', 'lockfile')
-        with self.assertRaises(Exception):
+    def test_with_stale_symlink_lock(self):
+        """Test with existing symlink lock.
+
+        TODO(ayatane): Old symlink lock file handling can be removed,
+        see flock.py
+        """
+        os.symlink('/proc/99999', 'lockfile')
+        with mock.patch.object(flock, '_is_pid_running',
+                               autospec=True) as running:
+            running.return_value = False
             with flock.FileLock('lockfile', timeout=0):
                 pass
+        self.assertFalse(os.path.islink('lockfile'))
 
-    def test__release_lock(self):
-        """Test _release_lock()."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink(file_lock._proc_path, 'lockfile')
-        file_lock._release_lock()
-        self.assertFalse(os.path.lexists('lockfile'))
+    def test_with_active_symlink_lock(self):
+        """Test with existing symlink lock.
 
-    def test__release_lock_other_process(self):
-        """Test _release_lock() ignores other process's lock."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink('/proc/1', 'lockfile')
-        file_lock._release_lock()
-        self.assertTrue(os.path.lexists('lockfile'))
+        TODO(ayatane): Old symlink lock file handling can be removed,
+        see flock.py
+        """
+        os.symlink('/proc/99999', 'lockfile')
+        with mock.patch.object(flock, '_is_pid_running',
+                               autospec=True) as running:
+            running.return_value = True
+            with self.assertRaises(flock.TimeoutError):
+                with flock.FileLock('lockfile', timeout=0):
+                    pass  # pragma: no cover
 
-    def test__get_lock_pid(self):
-        """Test _get_lock_pid."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink('/proc/1', 'lockfile')
-        self.assertEqual(file_lock._get_lock_pid(), 1)
 
-    def test__is_lock_orphaned_own_lock(self):
-        """Test _is_lock_orphaned() with own lock."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink(file_lock._proc_path, 'lockfile')
-        self.assertFalse(file_lock._is_lock_orphaned())
+class TimeoutErrorTestCase(unittest.TestCase):
+    """Tests for Timeout Error"""
 
-    def test__is_lock_orphaned_missing(self):
-        """Test _is_lock_orphaned() with missing lock."""
-        file_lock = flock.FileLock('lockfile')
-        self.assertFalse(file_lock._is_lock_orphaned())
+    def test_str(self):
+        """Test basic error string contents."""
+        e = flock.TimeoutError(filename='foo', timeout=123)
+        self.assertIn('foo', str(e))
+        self.assertIn('123', str(e))
 
-    @mock.patch.object(flock, '_is_pid_running')
-    def test__is_lock_orphaned(self, is_running):
-        """Test _is_lock_orphaned()."""
-        is_running.return_value = False
-        file_lock = flock.FileLock('lockfile')
-        os.symlink(file_lock._proc_path, 'lockfile')
-        self.assertTrue(file_lock._is_lock_orphaned())
 
-    def test__is_lock_flock(self):
-        """Test _is_lock_flock()."""
-        file_lock = flock.FileLock('lockfile')
-        with open('lockfile', 'w') as _f:
-            pass
-        self.assertTrue(file_lock._is_lock_flock())
+_LOCK_SCRIPT = """\
+import fcntl
+import os
+import time
 
-    def test__is_lock_flock_symlink(self):
-        """Test _is_lock_flock() with symlink lock."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink(file_lock._proc_path, 'lockfile')
-        self.assertFalse(file_lock._is_lock_flock())
+fd = os.open(%(filename)r, os.O_CREAT | os.O_RDWR)
+fcntl.lockf(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+print('hi')
+while True:
+    time.sleep(10)
+"""
 
-    def test__is_lock_flock_missing(self):
-        """Test _is_lock_flock() with missing lock."""
-        file_lock = flock.FileLock('lockfile')
-        self.assertFalse(file_lock._is_lock_flock())
 
-    @mock.patch.object(flock, '_is_pid_running')
-    def test__clean_orphaned_lock(self, is_running):
-        """Test _clean_orphaned_lock()."""
-        is_running.return_value = False
-        file_lock = flock.FileLock('lockfile')
-        os.symlink('/proc/1', 'lockfile')
-        file_lock._clean_orphaned_lock()
-        self.assertFalse(os.path.lexists('lockfile'))
-
-    @mock.patch.object(flock, '_is_pid_running')
-    def test__clean_orphaned_lock_owned(self, is_running):
-        """Test _clean_orphaned_lock() ignores owned lock."""
-        is_running.return_value = True
-        file_lock = flock.FileLock('lockfile')
-        os.symlink('/proc/1', 'lockfile')
-        file_lock._clean_orphaned_lock()
-        self.assertTrue(os.path.lexists('lockfile'))
-
-    def test__clean_flock_lock(self):
-        """Test _clean_flock_lock()."""
-        file_lock = flock.FileLock('lockfile')
-        with open('lockfile', 'w') as _f:
-            pass
-        file_lock._clean_flock_lock()
-        self.assertFalse(os.path.exists('lockfile'))
-
-    def test__clean_flock_lock_symlink(self):
-        """Test _clean_flock_lock() skips symlink lock."""
-        file_lock = flock.FileLock('lockfile')
-        os.symlink('/proc/1', 'lockfile')
-        file_lock._clean_flock_lock()
-        self.assertTrue(os.path.exists('lockfile'))
+@contextlib.contextmanager
+def _lock(filename):
+    """Lock a file in another process for testing."""
+    logger.debug('Grabbing external lock on %s', filename)
+    with subprocess32.Popen(
+            ['python', '-u', '-c', _LOCK_SCRIPT % {'filename': filename}],
+            stdout=subprocess32.PIPE) as proc:
+        logger.debug('Started external lock process for %s', filename)
+        proc.stdout.readline()
+        logger.debug('Finished grabbing external lock on %s', filename)
+        yield proc
+        logger.debug('Releasing external lock on %s', filename)
+        proc.terminate()

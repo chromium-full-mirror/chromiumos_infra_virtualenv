@@ -125,7 +125,7 @@ class VenvlibTmpDirTestCase(testcases.TmpdirTestCase):
         os.mkdir('foo')
         try:
             venvlib._makedirs_exist_ok('foo')
-        except OSError:
+        except OSError:  # pragma: no cover
             self.fail('OSError raised')
 
     def test__log_check_call(self):
@@ -236,7 +236,7 @@ class VersionedVenvTmpDirTestCase(testcases.TmpdirTestCase):
         venv = venvlib.VersionedVenv(spec)
         try:
             venv._check(spec)
-        except venvlib.SpecMismatchError:
+        except venvlib.SpecMismatchError:  # pragma: no cover
             self.fail('Check did not pass')
 
     def test__check_should_fail_with_different_spec(self):

@@ -11,11 +11,5 @@ readonly bin_dir="$(readlink -e -- "$(dirname -- "$0")")"
 cd "${bin_dir}/../venv"
 
 find . -name "*.pyc" -print0 | xargs -0 rm -f
-while getopts v name; do
-    case $name in
-        v) verbose=1;;
-        ?) printf "Usage: %s: [-v]\n" "$0" >&2; exit 2;;
-    esac
-done
 
-exec "${bin_dir}/python_venv" -m unittest discover "${verbose:+-v}" -s cros_venv
+exec "${bin_dir}/python_venv" -m pytest "$@"
