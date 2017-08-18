@@ -57,7 +57,7 @@ fi
 readonly extra_imports_dir=$(realpath ../venv)
 if [[ ! -d "${extra_imports_dir}" ]]; then
     cat <<EOF >&2
-ERROR: venv directory is not found at ${bin_dir}/..
+ERROR: ${bin_dir}/../venv does not exist
 See infra_virtualenv/README.md for details.
 EOF
     exit 1
