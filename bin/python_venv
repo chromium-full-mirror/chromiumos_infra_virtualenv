@@ -23,7 +23,7 @@ readonly -a infra_virtualenv_paths=(
 
 readonly bin_dir="$(readlink -e -- "$(dirname -- "$0")")"
 if [[ ! -d "${bin_dir}" ]]; then
-    echo "ERROR: Can not locate the location of python_env!" >&2
+    echo "python_venv: Cannot locate python_env!" >&2
     exit 1
 fi
 
@@ -47,9 +47,9 @@ find_create_venv() {
 readonly create_venv=$(find_create_venv)
 if [[ ! -f "${create_venv}" ]]; then
     cat <<EOF >&2
-ERROR: create_venv script could not be located.
-You need to update a constant inside python_venv, or your checkout might be
-incomplete.
+python_venv: create_venv script could not be located
+python_venv: Possible causes: python_venv configured incorrectly or
+python_venv: incomplete repo checkout
 EOF
     exit 1
 fi
@@ -57,8 +57,8 @@ fi
 readonly extra_imports_dir=$(realpath ../venv)
 if [[ ! -d "${extra_imports_dir}" ]]; then
     cat <<EOF >&2
-ERROR: ${bin_dir}/../venv does not exist
-See infra_virtualenv/README.md for details.
+python_venv: ${bin_dir}/../venv does not exist
+python_venv: See infra_virtualenv/README.md for details
 EOF
     exit 1
 fi
