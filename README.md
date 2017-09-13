@@ -21,7 +21,7 @@ Adding pre-built packages
 
 To add packages to this repository, run:
 
-    $ pip wheel -w path/to/pip_packages -r path/to/requirements.txt
+    $ bin/python_venv -m pip wheel -w path/to/pip_packages -r path/to/requirements.txt
 
 Commit the changes and make a CL.
 
