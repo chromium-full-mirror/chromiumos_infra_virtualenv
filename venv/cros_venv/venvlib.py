@@ -25,6 +25,7 @@ from cros_venv import flock
 
 _PACKAGE_DIR = os.path.join(constants.REPO_DIR, 'pip_packages')
 _VENV_PY = '/usr/bin/python2.7'
+_VIRTUALENV_COMMAND = 'virtualenv'
 
 # BASE_DEPENDENCIES are pip requirements automatically included in every
 # virtualenv so we have control over which versions of bootstrap
@@ -201,10 +202,34 @@ def _create_venv(venvdir, logfile):
     # by default.  virtualenv >1.10 accepts the --setuptools option but
     # does not document it.  Once we no longer have any hosts on
     # virtualenv 1.7, the --setuptools option can be removed.
-    command = ['virtualenv', venvdir, '-p', _VENV_PY,
+    command = [_VIRTUALENV_COMMAND, venvdir, '-p', _VENV_PY,
                '--extra-search-dir', _PACKAGE_DIR, '--setuptools',
                '--clear']
-    _log_check_call(command, logfile=logfile)
+    try:
+        _log_check_call(command, logfile=logfile)
+    except OSError as e:
+        raise VirtualenvMissingError(e), None, sys.exc_info()[2]
+
+
+class VirtualenvMissingError(Exception):
+    """Virtualenv is missing."""
+
+    def __init__(self, cause):
+        """Initialize instance.
+
+        cause is an object that describes the underlying cause of the
+        error.  This is usually an exception, but can be any object.
+        The object's string representation is used in this exception's
+        string representation.
+        """
+        super(VirtualenvMissingError, self).__init__(cause)
+        self.cause = cause
+
+    def __str__(self):
+        return 'virtualenv is not installed (caused by %s)' % (self.cause)
+
+    def __repr__(self):
+        return '%s(%r)' % (type(self).__name__, self.cause)
 
 
 def _install_reqs_file(python_path, reqs_path, logfile):

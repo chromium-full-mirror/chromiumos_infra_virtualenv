@@ -40,6 +40,21 @@ class VenvlibTestCase(unittest.TestCase):
         self.assertEqual(venvlib._get_python_version(), '2.7.12')
 
 
+class VirtualenvMissingErrorTestCase(unittest.TestCase):
+
+    """TestCase for VirtualenvMissingError."""
+
+    def test_str(self):
+        """Test str() on VirtualenvMissingError."""
+        self.assertEqual(str(venvlib.VirtualenvMissingError(Exception('foo'))),
+                         'virtualenv is not installed (caused by foo)')
+
+    def test_repr(self):
+        """Test repr() on VirtualenvMissingError."""
+        self.assertEqual(repr(venvlib.VirtualenvMissingError('foo')),
+                         "VirtualenvMissingError(u'foo')")
+
+
 class VenvlibTmpDirTestCase(testcases.TmpdirTestCase):
 
     """TestCase for venvlib functions that uses a temp directory."""
