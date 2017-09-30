@@ -1,32 +1,90 @@
-infra_virtualenv README
-=======================
+# infra_virtualenv README
 
 This repository provides a common Python virtualenv interface that
-infra code (such as chromite) can depend on.
+Chromium OS infrastructure code can depend on.
 
-Usage
------
+## Using virtualenv in another repository
 
-Virtualenv users should mimic this repository, which itself uses
-virtualenv for running unit tests.
+A repository adding virtualenv should mimic this repository, which
+itself uses virtualenv for running unit tests.
 
-1. Create a `venv` directory.  All packages and modules in this
-   directory will be importable inside the virtualenv.
-2. Create a `requirements.txt` file inside `venv` to list external
-   packages to install.
-3. Copy `bin/python_venv` and `bin/turtle` which serve as templates.
+Key files:
 
-Adding pre-built packages
--------------------------
+* `bin/python_venv` starts an instance of Python that uses the
+  virtualenv.
+* `bin/turtle` is an example script for running a Python module using
+  `bin/python_venv`
+* `venv/requirements.txt` lists the packages to install inside the
+  virtualenv. Refer to Pip's
+  [documentation](https://pip.pypa.io/en/stable/) for the
+  `requirements.txt` format.
+* `venv` is added to `PYTHONPATH`. For example, `venv/cros_venv` can
+  be imported inside the virtualenv using `import cros_venv`.
 
-To add packages to this repository, run:
+## Adding packages to be available for use
 
-    $ bin/python_venv -m pip wheel -w path/to/pip_packages -r path/to/requirements.txt
+Packages to be installed inside a virtualenv must first be added to
+`pip_packages`.
 
-Commit the changes and make a CL.
+To add packages, run:
 
-Low level API
--------------
+    $ bin/python_venv -m pip wheel -w pip_packages <packages to install>
+    
+Refer to Pip's documentation for details on the arguments for `pip`.
+
+Commit the added package and make a CL.
+
+## Adding third party packages to a virtualenv
+
+Add the packages to `requirements.txt`.  If the packages are not in
+`pip_packages` yet, add the packages to `pip_packages`.
+
+## Adding first party modules to a virtualenv
+
+First party modules refers to Chromium OS code (checked out by `repo`
+as a big honking source tree).
+
+NOTE: Do not use this for third party dependencies (stuff not owned by
+Chromium OS)!  This should only be used to set up imports for stuff we
+own.  For example, importing `python-MySQL` SHOULD NOT use this, but
+importing `chromite` MAY use this.
+
+There are two ways to do this:
+
+1. Adding a relative symlink to `venv`.
+2. Modifying `sys.path` in `__init__.py`.
+
+Adding a symlink to `venv` is simple and should be self-explanatory.
+However, keep in mind that `repo` checkouts may not always have the
+same structure, and certain environments such as production servers
+may store core in complete different locations.  This method is not
+powerful enough to account for these environments.
+
+Modifying `sys.path` is a lot more powerful.  The way to do this is to
+add a small bit of code to the `__init__.py` of the package that needs
+the import.
+
+Example (do not copy and paste blindly):
+
+    import os
+    import sys
+
+    PKGDIR = __path__[0]
+    _PATH1 = os.path.join(PKGDIR, '../foo')
+    _PATH2 = os.path.join(PKGDIR, '/opt/foo')
+    # Use the minimum amount of logic to find the path to add
+    if os.path.exists(_PATH1):
+        sys.path.append(_PATH1)
+    elif os.path.exists(_PATH2):
+        sys.path.append(_PATH2)
+    else:
+        raise ImportError('foo not found')
+
+You must also add the contents of the other project's
+`requirements.txt` to your project, as there is no easy way to resolve
+recursive dependencies automatically.
+
+## Low level API
 
 The `bin/create_venv` script prepares a virtualenv using a
 `requirements.txt` file.
@@ -45,39 +103,6 @@ Together, this might look up:
     $ venv=$(bin/create_venv requirements.txt)
     $ ${venv}/bin/python
 
-NOTE: it is not generally safe to run the other scripts in the
+NOTE: It is not generally safe to run the other scripts in the
 virtualenv's `bin` directory due to hard-coded paths.  Instead of
 running `bin/pip` for example, use `bin/python -m pip`.
-
-Adding arbitrary directories to import path
--------------------------------------------
-
-NOTE: Do not use this for third party dependencies (stuff not owned by
-ChromiumOS)!  This should only be used to set up imports for stuff we
-own.  For example, importing python-MySQL SHOULD NOT use this, but
-importing chromite from Autotest MAY use this.
-
-This should be handled by the minimum amount of code in the package's
-`__init__.py` file.
-
-Example:
-
-    """Autotest package."""
-
-    import sys
-
-    # Use the minimum amount of logic to find the path to add
-    _chromite_parent = 'site-packages'
-    sys.path.append(_chromite_parent)
-
-A solid understanding of the Python [import system][1] is recommended
-(the link is for Python 3, but it is informative).
-
-[1]: https://docs.python.org/3/reference/import.html
-
-In brief, `__init__.py` is executed whenever a package is imported.  A
-package is imported before any submodule or subpackage is imported.  A
-package is only imported once per Python process; future imports are
-looked up in `sys.modules`.  Thus, `__init__.py` will modify
-`sys.path` exactly once and is guaranteed to be run before anything in
-that package is imported.
