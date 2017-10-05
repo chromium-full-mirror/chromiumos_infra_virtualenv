@@ -1,5 +1,7 @@
 # infra_virtualenv README
 
+[TOC]
+
 This repository provides a common Python virtualenv interface that
 Chromium OS infrastructure code can depend on.
 
@@ -41,8 +43,8 @@ Add the packages to `requirements.txt`.  If the packages are not in
 
 ## Adding first party modules to a virtualenv
 
-First party modules refers to Chromium OS code (checked out by `repo`
-as a big honking source tree).
+"First party modules" refers to Chromium OS code (anything checked out
+by `repo`).
 
 NOTE: Do not use this for third party dependencies (stuff not owned by
 Chromium OS)!  This should only be used to set up imports for stuff we
@@ -57,8 +59,8 @@ There are two ways to do this:
 Adding a symlink to `venv` is simple and should be self-explanatory.
 However, keep in mind that `repo` checkouts may not always have the
 same structure, and certain environments such as production servers
-may store core in complete different locations.  This method is not
-powerful enough to account for these environments.
+may check out repositories in completely different locations.  This
+method is not powerful enough to account for these environments.
 
 Modifying `sys.path` is a lot more powerful.  The way to do this is to
 add a small bit of code to the `__init__.py` of the package that needs
@@ -69,10 +71,12 @@ Example (do not copy and paste blindly):
     import os
     import sys
 
+    # The path of the package
     PKGDIR = __path__[0]
+    # Paths to check
     _PATH1 = os.path.join(PKGDIR, '../foo')
-    _PATH2 = os.path.join(PKGDIR, '/opt/foo')
-    # Use the minimum amount of logic to find the path to add
+    _PATH2 = '/opt/foo'
+    
     if os.path.exists(_PATH1):
         sys.path.append(_PATH1)
     elif os.path.exists(_PATH2):
@@ -81,8 +85,8 @@ Example (do not copy and paste blindly):
         raise ImportError('foo not found')
 
 You must also add the contents of the other project's
-`requirements.txt` to your project, as there is no easy way to resolve
-recursive dependencies automatically.
+`requirements.txt` to your project.  We do not attempt to resolve
+dependencies recursively as that is very difficult.
 
 ## Low level API
 
