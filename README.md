@@ -15,13 +15,20 @@ Key files:
 * `bin/python_venv` starts an instance of Python that uses the
   virtualenv.
 * `bin/turtle` is an example script for running a Python module using
-  `bin/python_venv`
+  `bin/python_venv`.
 * `venv/requirements.txt` lists the packages to install inside the
-  virtualenv. Refer to Pip's
-  [documentation](https://pip.pypa.io/en/stable/) for the
-  `requirements.txt` format.
+  virtualenv.
 * `venv` is added to `PYTHONPATH`. For example, `venv/cros_venv` can
   be imported inside the virtualenv using `import cros_venv`.
+
+To make sure all your requirements are pinned, run:
+
+    bin/python_venv -m pip freeze
+
+Copy the output into `requirements.txt`
+
+Refer to Pip's [documentation](https://pip.pypa.io/en/stable/) for the
+`requirements.txt` format.
 
 ## Adding packages to be available for use
 
@@ -30,18 +37,54 @@ Packages to be installed inside a virtualenv must first be added to
 
 To add packages, run:
 
-    $ bin/python_venv -m pip wheel -w pip_packages <packages to install>
-    
+    bin/python_venv -m pip wheel -w pip_packages foo==1.2.3
+
 Refer to Pip's documentation for details on the arguments for `pip`.
 
-Commit the added package and make a CL.
+If the resultant wheel contains `linux` and not `manylinux`, then it
+is NOT portable.  You will need to build a portable wheel; see next
+section.
+
+Commit the wheel and make a CL.
+
+## Building portable wheel with C extensions
+
+You need to use the standard manylinux Docker image to build the
+portable wheel.
+
+Install Docker.
+
+Add the manylinux Docker image:
+
+    docker pull quay.io/pypa/manylinux1_x86_64@sha256:18be396acea7199c38f943be794d24405c0d84fcfdef15e2599084ec7810bba9
+
+Get the image ID:
+
+    docker image ls
+
+Run the Docker image:
+
+    docker run -i -t -v "$(pwd)/pip_packages:/pip_packages" --rm $IMAGE /bin/bash
+
+Build a portable wheel:
+
+    /opt/python/cp27-cp27mu pip wheel -w /pip_packages foo==1.2.3
+    auditwheel repair -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
+
+Keep the `manylinux` wheel and remove the `linux` wheel.
+
+Since these wheels are built as root inside the container, you may
+need to chown the files on the host to prevent permission issues
+later:
+
+    sudo chown $(id -un):$(id -gn) pip_packages/*
 
 ## Adding third party packages to a virtualenv
 
 Add the packages to `requirements.txt`.  If the packages are not in
 `pip_packages` yet, add the packages to `pip_packages`.
 
-## Adding first party modules to a virtualenv
+## Adding first party modules to a virtualenv's import path
 
 "First party modules" refers to Chromium OS code (anything checked out
 by `repo`).
@@ -76,7 +119,7 @@ Example (do not copy and paste blindly):
     # Paths to check
     _PATH1 = os.path.join(PKGDIR, '../foo')
     _PATH2 = '/opt/foo'
-    
+
     if os.path.exists(_PATH1):
         sys.path.append(_PATH1)
     elif os.path.exists(_PATH2):
@@ -93,7 +136,7 @@ dependencies recursively as that is very difficult.
 The `bin/create_venv` script prepares a virtualenv using a
 `requirements.txt` file.
 
-    $ bin/create_venv requirements.txt
+    bin/create_venv requirements.txt
 
 The script will print the path to the virtualenv to stdout.  Note that
 the output ends with a newline; Bash handles this, but Python does
@@ -104,8 +147,8 @@ directory.
 
 Together, this might look up:
 
-    $ venv=$(bin/create_venv requirements.txt)
-    $ ${venv}/bin/python
+    venv=$(bin/create_venv requirements.txt)
+    ${venv}/bin/python
 
 NOTE: It is not generally safe to run the other scripts in the
 virtualenv's `bin` directory due to hard-coded paths.  Instead of
