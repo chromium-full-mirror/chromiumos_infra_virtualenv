@@ -196,6 +196,10 @@ def _make_reqs_file(spec):
 
 def _create_venv(venvdir, logfile):
     """Create a virtualenv at the given path."""
+    env = os.environ.copy()
+    # TODO(crbug.com/808434): upstream virtualenv has a bug when this is
+    # set.  See also https://github.com/pypa/virtualenv/issues/565
+    env.pop('VIRTUALENV_ALWAYS_COPY', None)
     # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
     # requires specifying --setuptools, else distribute is used
     # (distribute is deprecated).  virtualenv after 1.10 uses setuptools
@@ -206,7 +210,7 @@ def _create_venv(venvdir, logfile):
                '--extra-search-dir', _PACKAGE_DIR, '--setuptools',
                '--clear']
     try:
-        _log_check_call(command, logfile=logfile)
+        _log_check_call(command, logfile=logfile, env=env)
     except OSError as e:
         raise VirtualenvMissingError(e), None, sys.exc_info()[2]
 
