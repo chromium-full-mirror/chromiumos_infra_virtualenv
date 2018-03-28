@@ -52,11 +52,13 @@ Commit the wheel and make a CL.
 You need to use the standard manylinux Docker image to build the
 portable wheel.
 
-Install Docker.
+Install Docker:
+
+    https://g3doc.corp.google.com/cloud/containers/registry/g3doc/glinux-docker/install.md?cl=head
 
 Add the manylinux Docker image:
 
-    docker pull quay.io/pypa/manylinux1_x86_64@sha256:18be396acea7199c38f943be794d24405c0d84fcfdef15e2599084ec7810bba9
+    docker pull quay.io/pypa/manylinux1_x86_64@sha256:a0f4dd1303b10dbbd99f84e6d7e9b6575efd5c3a6b16519a15703a70a5833b4d
 
 Get the image ID:
 
@@ -68,7 +70,8 @@ Run the Docker image:
 
 Build a portable wheel:
 
-    /opt/python/cp27-cp27mu pip wheel -w /pip_packages foo==1.2.3
+    cd /opt/python/cp27-cp27mu
+    bin/pip wheel -w /pip_packages foo==1.2.3
     auditwheel repair -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
 
 Keep the `manylinux` wheel and remove the `linux` wheel.
