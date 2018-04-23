@@ -268,7 +268,8 @@ def _get_cache_dir():
 
     Returns absolute path.
     """
-    return os.path.expanduser('~/.cache/cros_venv')
+    return os.environ.get('CROS_VENV_CACHE',
+                          os.path.expanduser('~/.cache/cros_venv'))
 
 
 def _makedirs_exist_ok(path):
