@@ -58,11 +58,11 @@ Install Docker:
 
 Add the manylinux Docker image:
 
-    docker pull quay.io/pypa/manylinux1_x86_64@sha256:a0f4dd1303b10dbbd99f84e6d7e9b6575efd5c3a6b16519a15703a70a5833b4d
+    docker pull quay.io/pypa/manylinux2010_x86_64@sha256:6ccd12df1a01003214df0211f16d2de70d17eba35f8e7b0fff2d66c18cb0434e
 
 Get the image ID:
 
-    docker image ls
+    docker image ls quay.io/pypa/manylinux2010_x86_64
 
 Run the Docker image:
 
@@ -72,7 +72,7 @@ Build a portable wheel:
 
     cd /opt/python/cp27-cp27mu
     bin/pip wheel -w /pip_packages foo==1.2.3
-    auditwheel repair -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
+    auditwheel repair --plat manylinux2010_x86_64 -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
 
 Keep the `manylinux` wheel and remove the `linux` wheel.
 
