@@ -54,7 +54,7 @@ portable wheel.
 
 Install Docker:
 
-    https://g3doc.corp.google.com/cloud/containers/registry/g3doc/glinux-docker/install.md?cl=head
+    https://g3doc.corp.google.com/cloud/containers/g3doc/glinux-docker/install.md?cl=head
 
 Add the manylinux Docker image:
 
