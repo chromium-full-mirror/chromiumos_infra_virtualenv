@@ -79,7 +79,7 @@ class FileLock(object):
                 try:
                     self._fd = os.open(self._lockfile,
                                        os.O_RDWR | os.O_CREAT,
-                                       0666)
+                                       0o666)
                     break
                 except OSError as e:  # pragma: no cover
                     logger.debug('Error opening lock file: %s', e)

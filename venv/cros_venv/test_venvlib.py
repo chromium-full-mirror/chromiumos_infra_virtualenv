@@ -6,12 +6,13 @@ from __future__ import absolute_import
 from __future__ import print_function
 from __future__ import unicode_literals
 
-from cStringIO import StringIO
 import os
+import sys
 import unittest
 import warnings
 
 import mock
+from six.moves import StringIO
 
 from cros_venv import flock
 from cros_venv import testcases
@@ -51,8 +52,11 @@ class VirtualenvMissingErrorTestCase(unittest.TestCase):
 
     def test_repr(self):
         """Test repr() on VirtualenvMissingError."""
-        self.assertEqual(repr(venvlib.VirtualenvMissingError('foo')),
-                         "VirtualenvMissingError(u'foo')")
+        if sys.version_info.major < 3:
+            exp = "VirtualenvMissingError(u'foo')"
+        else:
+            exp = "VirtualenvMissingError('foo')"
+        self.assertEqual(repr(venvlib.VirtualenvMissingError('foo')), exp)
 
 
 class VenvlibTmpDirTestCase(testcases.TmpdirTestCase):
@@ -68,10 +72,14 @@ class VenvlibTmpDirTestCase(testcases.TmpdirTestCase):
             self.fail('OSError raised')
 
     def test__log_check_call(self):
+        if sys.version_info.major < 3:
+            exp = "Running [u'echo', u'hi']\nhi\n"
+        else:
+            exp = "Running ['echo', 'hi']\nhi\n"
         with open('tmp', 'w') as f:
             venvlib._log_check_call(['echo', 'hi'], logfile=f)
         with open('tmp', 'r') as f:
-            self.assertEqual(f.read(), "Running [u'echo', u'hi']\nhi\n")
+            self.assertEqual(f.read(), exp)
 
 
 class VenvPathsTestCase(unittest.TestCase):
@@ -80,8 +88,11 @@ class VenvPathsTestCase(unittest.TestCase):
 
     def test_repr(self):
         paths = venvlib._VenvPaths('/tmp')
-        self.assertEqual(repr(paths),
-                         "_VenvPaths(u'/tmp')")
+        if sys.version_info.major < 3:
+            exp = "_VenvPaths(u'/tmp')"
+        else:
+            exp = "_VenvPaths('/tmp')"
+        self.assertEqual(repr(paths), exp)
 
     def test_venvdir(self):
         """Test for venvdir attribute."""

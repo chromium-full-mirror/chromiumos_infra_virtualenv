@@ -20,11 +20,14 @@ import sys
 import tempfile
 import warnings
 
+import six
+
 from cros_venv import constants
 from cros_venv import flock
 
 _PACKAGE_DIR = os.path.join(constants.REPO_DIR, 'pip_packages')
-_VENV_PY = '/usr/bin/python2.7'
+_VENV_PY = ('/usr/bin/python%s.%s' %
+            (sys.version_info.major, sys.version_info.minor))
 _VIRTUALENV_COMMAND = 'virtualenv'
 
 # BASE_DEPENDENCIES are pip requirements automatically included in every
@@ -157,7 +160,7 @@ def _get_reqs_hash(spec):
     Make sure to check for collisions.
     """
     hasher = hashlib.md5()
-    hasher.update(spec.reqs)
+    hasher.update(spec.reqs.encode('utf-8'))
     return hasher.hexdigest()
 
 
@@ -212,7 +215,7 @@ def _create_venv(venvdir, logfile):
     try:
         _log_check_call(command, logfile=logfile, env=env)
     except OSError as e:
-        raise VirtualenvMissingError(e), None, sys.exc_info()[2]
+        six.reraise(VirtualenvMissingError(e), None, sys.exc_info()[2])
 
 
 class VirtualenvMissingError(Exception):
@@ -264,7 +267,7 @@ _log_check_call = _add_call_logging(subprocess.check_call)
 
 def _get_python_version():
     """Return the version string for the current Python."""
-    return '.'.join(unicode(part) for part in sys.version_info[:3])
+    return '.'.join(str(part) for part in sys.version_info[:3])
 
 
 def _get_cache_dir():

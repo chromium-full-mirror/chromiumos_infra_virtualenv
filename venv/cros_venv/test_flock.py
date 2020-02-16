@@ -11,10 +11,15 @@ import errno
 import fcntl
 import logging
 import os
+import sys
 import unittest
 
 import mock
-import subprocess32
+
+if sys.version_info.major < 3:
+    import subprocess32 as subprocess
+else:
+    import subprocess
 
 from cros_venv import testcases
 from cros_venv import flock
@@ -146,9 +151,9 @@ while True:
 def _lock(filename):
     """Lock a file in another process for testing."""
     logger.debug('Grabbing external lock on %s', filename)
-    with subprocess32.Popen(
+    with subprocess.Popen(
             ['python', '-u', '-c', _LOCK_SCRIPT % {'filename': filename}],
-            stdout=subprocess32.PIPE) as proc:
+            stdout=subprocess.PIPE) as proc:
         logger.debug('Started external lock process for %s', filename)
         proc.stdout.readline()
         logger.debug('Finished grabbing external lock on %s', filename)
