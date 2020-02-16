@@ -4,19 +4,7 @@ pprabhu@chromium.org
 xixuan@chromium.org
 
 # Build Team
-cjmcdonald@chromium.org
-lamontjones@chromium.org
-mmortensen@google.com
-nednguyen@google.com
-saklein@chromium.org
-vapier@chromium.org
+include chromiumos/chromite:/OWNERS.build
 
 # CI team
-andrewlamb@chromium.org
-dburger@chromium.org
-dhanyaganesh@chromium.org
-engeg@chromium.org
-evanhernandez@chromium.org
-jclinton@chromium.org
-mikenichols@chromium.org
-seanabraham@chromium.org
+include chromiumos/chromite:/OWNERS.ci
