@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+import sys
 
 from cros_venv import venvlib
 
@@ -32,7 +33,14 @@ def main():
     with open(args.reqs_file, 'r') as f:
         spec = venvlib.make_spec(f)
     venv = venvlib.VersionedVenv(spec)
-    print(venv.ensure())
+    try:
+        print(venv.ensure())
+        logging.debug('Log file can be found at: %s', venv.logfile)
+    except Exception:
+        logging.error('Creating venv with reqs file "%s" failed',
+                      args.reqs_file, exc_info=True)
+        logging.error('Dumping entire creation log:\n%s', venv.logdata)
+        sys.exit(1)
 
 
 def configure_logging(verbose):
