@@ -33,7 +33,7 @@ _VIRTUALENV_COMMAND = 'virtualenv'
 # BASE_DEPENDENCIES are pip requirements automatically included in every
 # virtualenv so we have control over which versions of bootstrap
 # packages are installed.
-_BASE_DEPENDENCIES = ('setuptools==28.2.0', 'pip==8.1.2')
+_BASE_DEPENDENCIES = ('setuptools==44.0.0', 'pip==20.0.2')
 
 
 class _VenvPaths(object):

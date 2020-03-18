@@ -269,4 +269,4 @@ class VenvSpecTestCase(unittest.TestCase):
         with venvlib._make_reqs_file(spec) as f, \
              open(f.name, 'r') as rfile:
             self.assertEqual(rfile.read(),
-                             'setuptools==28.2.0\npip==8.1.2\nfoo==1.0.0\n')
+                             'setuptools==44.0.0\npip==20.0.2\nfoo==1.0.0\n')
