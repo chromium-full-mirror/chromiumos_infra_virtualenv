@@ -9,14 +9,17 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 import collections
+import distutils.util
 import functools
 import hashlib
 import itertools
 import json
 import os
+import platform
 import shutil
 import subprocess
 import sys
+import sysconfig
 import tempfile
 import warnings
 
@@ -103,6 +106,30 @@ class VersionedVenv(object):
             self._check_or_create()
         return self._paths.venvdir
 
+    @property
+    def logfile(self):
+        """Show path to internal log file."""
+        return self._paths.logfile
+
+    @property
+    def logdata(self):
+        """Get any internal logged data."""
+        with open(self._paths.logfile) as fp:
+            return fp.read()
+
+    def _log_env(self, logfile):
+        """Log details about the active runtime for debugging."""
+        def get_var(var):
+            return sysconfig.get_config_var(var)
+        logfile.writelines([
+            'venv spec: %s\n' % (self._spec,),
+            'Distutils platform tag: %s\n' % (distutils.util.get_platform(),),
+            'Python implementation: %s\n' % (platform.python_implementation(),),
+        ])
+        for var in ('py_version_nodot', 'SOABI', 'Py_DEBUG', 'WITH_PYMALLOC',
+                    'Py_UNICODE_SIZE'):
+            logfile.write('sysconfig %s: %s\n' % (var, get_var(var)))
+
     def _check_or_create(self):
         """Check virtualenv, creating it if it is not created."""
         try:
@@ -116,6 +143,7 @@ class VersionedVenv(object):
         """Create virtualenv."""
         with open(self._paths.logfile, 'w') as logfile, \
              _make_reqs_file(self._spec) as reqs_file:
+            self._log_env(logfile)
             _create_venv(venvdir=self._paths.venvdir,
                          logfile=logfile)
             _install_reqs_file(python_path=self._paths.python,
@@ -241,7 +269,7 @@ class VirtualenvMissingError(Exception):
 
 def _install_reqs_file(python_path, reqs_path, logfile):
     """Install reqs file using pip."""
-    command = [python_path, '-m', 'pip', 'install',
+    command = [python_path, '-m', 'pip', 'install', '-vvv',
                '--no-index', '-f', 'file://' + _PACKAGE_DIR, '-r', reqs_path]
     _log_check_call(command, logfile=logfile)
 
