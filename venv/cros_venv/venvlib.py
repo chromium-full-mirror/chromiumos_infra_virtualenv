@@ -23,8 +23,6 @@ import sysconfig
 import tempfile
 import warnings
 
-import six
-
 from cros_venv import constants
 from cros_venv import flock
 
@@ -243,7 +241,7 @@ def _create_venv(venvdir, logfile):
     try:
         _log_check_call(command, logfile=logfile, env=env)
     except OSError as e:
-        six.reraise(VirtualenvMissingError(e), None, sys.exc_info()[2])
+        raise VirtualenvMissingError(e)
 
 
 class VirtualenvMissingError(Exception):
