@@ -27,8 +27,6 @@ from cros_venv import constants
 from cros_venv import flock
 
 _PACKAGE_DIR = os.path.join(constants.REPO_DIR, 'pip_packages')
-_VENV_PY = ('/usr/bin/python%s.%s' %
-            (sys.version_info.major, sys.version_info.minor))
 _VIRTUALENV_COMMAND = 'virtualenv'
 
 # BASE_DEPENDENCIES are pip requirements automatically included in every
@@ -235,7 +233,7 @@ def _create_venv(venvdir, logfile):
     # by default.  virtualenv >1.10 accepts the --setuptools option but
     # does not document it.  Once we no longer have any hosts on
     # virtualenv 1.7, the --setuptools option can be removed.
-    command = [_VIRTUALENV_COMMAND, venvdir, '-p', _VENV_PY,
+    command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
                '--extra-search-dir', _PACKAGE_DIR, '--setuptools',
                '--clear']
     try:
