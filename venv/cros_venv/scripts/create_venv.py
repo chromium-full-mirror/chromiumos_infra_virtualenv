@@ -47,7 +47,7 @@ def configure_logging(verbose):
     if verbose:
         logging.basicConfig(level='DEBUG')
     else:
-        logging.getLogger().addHandler(logging.NullHandler())
+        logging.basicConfig(level='INFO')
 
 
 if __name__ == '__main__':
