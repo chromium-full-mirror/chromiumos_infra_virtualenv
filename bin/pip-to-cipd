@@ -1,0 +1,90 @@
+#!/bin/bash
+# Copyright 2020 The Chromium OS Authors. All rights reserved.
+# Use of this source code is governed by a BSD-style license that can be
+# found in the LICENSE file.
+
+# Convert local wheels to cipd packages for upload.
+#
+# This is mostly a mitigation until Chrome infra's dockerbuild supports building
+# Python 3-only wheels.
+
+set -eu
+
+# Switch to the pip_packages/ dir.
+readonly bin_dir="$(readlink -e -- "$(dirname -- "$0")")"
+readonly pip_dir="${bin_dir}/../pip_packages"
+cd "${pip_dir}"
+
+# Walk each wheel that we have in the tree.
+for whl in *.whl; do
+  # If we already created a package, skip it.  Makes incremental runs nicer.
+  if [[ -e "${whl}.pkg" ]]; then
+    continue
+  fi
+
+  # In case we need to rename the wheel in the cipd package.
+  newwhl="${whl}"
+
+  # The name of the cipd package itself.  This is the server-side name:
+  # https://chrome-infra-packages.appspot.com/p/chromiumos/infra/virtualenv/$pkg/
+  pkg="${whl%%-*}"
+
+  # Figure out what versions of Python this wheel is compatible with, and
+  # name the package & bundled wheel accordingly.  This follows the current
+  # chops conventions:
+  # - For source-only packages, use the right -py2/-py3/-py2_py3 suffix.
+  # - For binary wheels, use the vpython ABI tag in the pkg name, and then
+  #   rename the bundled wheel so it's compatible with all vpython versions.
+  #
+  # This latter part is a bit funky, but it's how vpython3 currently processes
+  # cipd wheels: It uses the vpython ABI to select the cipd package on the
+  # server, and then assumes whatever wheel is inside is compatible.  That's
+  # why we rename it to "none-any" -- to bypass python/pip's own ABI search.
+  # This is how chops' dockerbuild logic also works currently.
+  case ${whl} in
+  *-py2.py3-none-any*)
+    pkg+="-py2_py3"
+    ;;
+  *-py2-none-any*)
+    pkg+="-py2"
+    ;;
+  *-py3-none-any*)
+    pkg+="-py3"
+    ;;
+  *-cp38-cp38-manylinux*_x86_64*)
+    pkg+="/linux-amd64_cp32_abi3"
+    newwhl="${whl/-cp38-cp38-manylinux*_x86_64/-py3-none-any}"
+    ;;
+  *)
+    echo "Skipping ${whl}"
+    continue
+    ;;
+  esac
+
+  echo "making ${whl}.pkg"
+
+  # Create a temp dir using the layout that cipd/vpython expects for wheels:
+  # ./
+  #  |- .cipdpkg/
+  #  |   `- manifest.json
+  #  `- <the python wheel>
+  # Then we'll zip it up and get our cipd package!
+  rm -rf tmp
+  mkdir -p tmp/.cipdpkg
+  pushd tmp >/dev/null
+  ln "../${whl}" "${newwhl}"
+  cat <<EOF >.cipdpkg/manifest.json
+{
+  "format_version": "1.1",
+  "package_name": "chromiumos/infra/virtualenv/${pkg}",
+  "install_mode": "symlink"
+}
+EOF
+  zip -q "../${whl}.pkg" "${newwhl}" .cipdpkg/manifest.json
+  popd >/dev/null
+done
+
+rm -rf tmp
+
+echo "To upload:"
+echo "  cipd pkg-register <pkg file>"
