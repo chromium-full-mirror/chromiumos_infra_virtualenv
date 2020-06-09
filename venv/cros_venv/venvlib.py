@@ -247,7 +247,8 @@ def _create_venv(venvdir, logfile):
     env.pop('VIRTUALENV_ALWAYS_COPY', None)
 
     command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
-               '--extra-search-dir', _PACKAGE_DIR, '--clear']
+               '--extra-search-dir', _PACKAGE_DIR, '--clear',
+               '--never-download', '-vvvvv']
     # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
     # requires specifying --setuptools, else distribute is used
     # (distribute is deprecated).  virtualenv after 1.10 uses setuptools
