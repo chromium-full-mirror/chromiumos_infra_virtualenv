@@ -237,7 +237,7 @@ def _virtualenv_version():
 def _create_venv(venvdir, logfile):
     """Create a virtualenv at the given path."""
     ver = _virtualenv_version()
-    MIN_VER = (1, 7)
+    MIN_VER = (1, 10)
     assert ver >= MIN_VER, ('virtualenv %s is required, but %s was found' %
                             (ver, MIN_VER))
 
@@ -249,14 +249,6 @@ def _create_venv(venvdir, logfile):
     command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
                '--extra-search-dir', _PACKAGE_DIR, '--clear',
                '--never-download', '-vvvvv']
-    # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
-    # requires specifying --setuptools, else distribute is used
-    # (distribute is deprecated).  virtualenv after 1.10 uses setuptools
-    # by default.  virtualenv >1.10 accepts the --setuptools option but
-    # does not document it.  Once we no longer have any hosts on
-    # virtualenv 1.7, the --setuptools option can be removed.
-    if ver < (1, 10):
-        command += ['--setuptools']
     try:
         _log_check_call(command, logfile=logfile, env=env)
     except OSError as e:
