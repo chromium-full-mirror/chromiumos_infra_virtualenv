@@ -246,15 +246,16 @@ def _create_venv(venvdir, logfile):
     # set.  See also https://github.com/pypa/virtualenv/issues/565
     env.pop('VIRTUALENV_ALWAYS_COPY', None)
 
+    command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
+               '--extra-search-dir', _PACKAGE_DIR, '--clear']
     # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
     # requires specifying --setuptools, else distribute is used
     # (distribute is deprecated).  virtualenv after 1.10 uses setuptools
     # by default.  virtualenv >1.10 accepts the --setuptools option but
     # does not document it.  Once we no longer have any hosts on
     # virtualenv 1.7, the --setuptools option can be removed.
-    command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
-               '--extra-search-dir', _PACKAGE_DIR, '--setuptools',
-               '--clear']
+    if ver < (1, 10):
+        command += ['--setuptools']
     try:
         _log_check_call(command, logfile=logfile, env=env)
     except OSError as e:
