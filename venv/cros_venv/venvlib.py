@@ -242,9 +242,10 @@ def _create_venv(venvdir, logfile):
                             (ver, MIN_VER))
 
     env = os.environ.copy()
-    # TODO(crbug.com/808434): upstream virtualenv has a bug when this is
-    # set.  See also https://github.com/pypa/virtualenv/issues/565
-    env.pop('VIRTUALENV_ALWAYS_COPY', None)
+    if ver < (20, 0):
+        # TODO(crbug.com/808434): upstream virtualenv has a bug when this is
+        # set.  See also https://github.com/pypa/virtualenv/issues/565
+        env.pop('VIRTUALENV_ALWAYS_COPY', None)
 
     command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
                '--extra-search-dir', _PACKAGE_DIR, '--clear',
