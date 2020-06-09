@@ -16,6 +16,7 @@ import itertools
 import json
 import os
 import platform
+import re
 import shutil
 import subprocess
 import sys
@@ -221,12 +222,30 @@ def _make_reqs_file(spec):
     return f
 
 
+def _virtualenv_version():
+    """Return a version tuple for virtualenv."""
+    # Versions before 20.0.0 returned just the version.
+    # The 20.0.0 series switched to:
+    # virtualenv 20.0.13 from .../virtualenv/__init__.py
+    result = subprocess.check_output([_VIRTUALENV_COMMAND, '--version'])
+    # This strips off "rc" and related tags, but we don't care for our use.
+    m = re.match(br'^(virtualenv *)?([0-9.]+)', result)
+    assert m, 'Could not find version in "%s"' % (result,)
+    return tuple(int(x) for x in m.group(2).split(b'.'))
+
+
 def _create_venv(venvdir, logfile):
     """Create a virtualenv at the given path."""
+    ver = _virtualenv_version()
+    MIN_VER = (1, 7)
+    assert ver >= MIN_VER, ('virtualenv %s is required, but %s was found' %
+                            (ver, MIN_VER))
+
     env = os.environ.copy()
     # TODO(crbug.com/808434): upstream virtualenv has a bug when this is
     # set.  See also https://github.com/pypa/virtualenv/issues/565
     env.pop('VIRTUALENV_ALWAYS_COPY', None)
+
     # TODO(ayatane): Ubuntu Precise ships with virtualenv 1.7, which
     # requires specifying --setuptools, else distribute is used
     # (distribute is deprecated).  virtualenv after 1.10 uses setuptools
