@@ -227,7 +227,15 @@ def _virtualenv_version():
     # Versions before 20.0.0 returned just the version.
     # The 20.0.0 series switched to:
     # virtualenv 20.0.13 from .../virtualenv/__init__.py
-    result = subprocess.check_output([_VIRTUALENV_COMMAND, '--version'])
+    try:
+      result = subprocess.check_output([_VIRTUALENV_COMMAND, '--version'],
+                                       stderr=subprocess.STDOUT)
+    except OSError:
+      raise EnvironmentError(
+          'Error executing virtualenv, make sure that you install '
+          'virtualenv first (see '
+          'https://virtualenv.pypa.io/en/latest/installation.html)')
+
     # This strips off "rc" and related tags, but we don't care for our use.
     m = re.match(br'^(virtualenv *)?([0-9.]+)', result)
     assert m, 'Could not find version in "%s"' % (result,)
