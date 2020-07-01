@@ -255,16 +255,11 @@ def _virtualenv_version():
 def _create_venv(venvdir, logfile):
     """Create a virtualenv at the given path."""
     ver = _virtualenv_version()
-    MIN_VER = (1, 10)
+    MIN_VER = (20, 0)
     assert ver >= MIN_VER, ('virtualenv %s is required, but %s was found' %
-                            (ver, MIN_VER))
+                            (MIN_VER, ver))
 
     env = os.environ.copy()
-    if ver < (20, 0):
-        # TODO(crbug.com/808434): upstream virtualenv has a bug when this is
-        # set.  See also https://github.com/pypa/virtualenv/issues/565
-        env.pop('VIRTUALENV_ALWAYS_COPY', None)
-
     command = [_VIRTUALENV_COMMAND, venvdir, '-p', sys.executable,
                '--extra-search-dir', _PACKAGE_DIR, '--clear',
                '--never-download', '-vvvvv']
