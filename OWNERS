@@ -2,8 +2,6 @@ ayatane@chromium.org
 pprabhu@chromium.org
 xixuan@chromium.org
 
-# Build Team
 include chromiumos/chromite:/OWNERS.build
-
-# CI team
 include chromiumos/chromite:/OWNERS.ci
+include chromiumos/chromite:/OWNERS.testplatform
