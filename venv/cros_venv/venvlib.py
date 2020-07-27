@@ -10,6 +10,7 @@ from __future__ import unicode_literals
 
 import collections
 import distutils.util
+import errno
 import functools
 import hashlib
 import itertools
@@ -34,6 +35,10 @@ _VIRTUALENV_COMMAND = 'virtualenv'
 # virtualenv so we have control over which versions of bootstrap
 # packages are installed.
 _BASE_DEPENDENCIES = ('setuptools==44.0.0', 'pip==20.0.2')
+
+
+class Error(Exception):
+    """Base exception for all errors in this module."""
 
 
 class _VenvPaths(object):
@@ -167,7 +172,7 @@ class VersionedVenv(object):
             return _load_spec(f)
 
 
-class SpecMismatchError(Exception):
+class SpecMismatchError(Error):
     """Versioned virtualenv specs do not match."""
 
 
@@ -230,11 +235,11 @@ def _virtualenv_version():
     try:
       result = subprocess.check_output([_VIRTUALENV_COMMAND, '--version'],
                                        stderr=subprocess.STDOUT)
-    except OSError:
-      raise EnvironmentError(
-          'Error executing virtualenv, make sure that you install '
-          'virtualenv first (see '
-          'https://virtualenv.pypa.io/en/latest/installation.html)')
+    except OSError as e:
+      if e.errno == errno.ENOENT:
+          raise VirtualenvMissingError(e)
+      else:
+          raise
 
     # This strips off "rc" and related tags, but we don't care for our use.
     m = re.match(br'^(virtualenv *)?([0-9.]+)', result)
@@ -264,7 +269,7 @@ def _create_venv(venvdir, logfile):
         raise VirtualenvMissingError(e)
 
 
-class VirtualenvMissingError(Exception):
+class VirtualenvMissingError(Error):
     """Virtualenv is missing."""
 
     def __init__(self, cause):

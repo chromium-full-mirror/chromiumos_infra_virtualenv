@@ -16,6 +16,7 @@ from __future__ import unicode_literals
 
 import argparse
 import logging
+import os
 import sys
 
 from cros_venv import venvlib
@@ -36,6 +37,10 @@ def main():
     try:
         print(venv.ensure())
         logging.debug('Log file can be found at: %s', venv.logfile)
+    except venvlib.VirtualenvMissingError as e:
+        print('%s: error: %s' % (os.path.basename(sys.argv[0]), e),
+              file=sys.stderr)
+        sys.exit(1)
     except Exception:
         logging.error('Creating venv with reqs file "%s" failed',
                       args.reqs_file, exc_info=True)
