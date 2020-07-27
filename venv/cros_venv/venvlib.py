@@ -116,8 +116,13 @@ class VersionedVenv(object):
     @property
     def logdata(self):
         """Get any internal logged data."""
-        with open(self._paths.logfile) as fp:
-            return fp.read()
+        try:
+            with open(self._paths.logfile) as fp:
+                return fp.read()
+        except IOError as e:
+            if e.errno == errno.ENOENT:
+                return '<log does not exist>'
+            raise
 
     def _log_env(self, logfile):
         """Log details about the active runtime for debugging."""
