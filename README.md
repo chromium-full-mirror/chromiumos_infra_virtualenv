@@ -54,15 +54,15 @@ portable wheel.
 
 Install Docker:
 
-    https://g3doc.corp.google.com/cloud/containers/g3doc/glinux-docker/install.md?cl=head
+    http://go/installdocker
 
 Add the manylinux Docker image:
 
-    docker pull quay.io/pypa/manylinux2010_x86_64@sha256:6ccd12df1a01003214df0211f16d2de70d17eba35f8e7b0fff2d66c18cb0434e
+    docker pull quay.io/pypa/manylinux2014_x86_64@sha256:cffd074a33992fb7493f727fda59aebd81e54b8a0e016574ceab054691acdfd0
 
 Get the image ID:
 
-    docker image ls quay.io/pypa/manylinux2010_x86_64
+    docker image ls quay.io/pypa/manylinux2014_x86_64
 
 Run the Docker image:
 
@@ -72,7 +72,7 @@ Build a portable wheel:
 
     cd /opt/python/cp27-cp27mu
     bin/pip wheel -w /pip_packages foo==1.2.3
-    auditwheel repair --plat manylinux2010_x86_64 -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
+    auditwheel repair --plat manylinux2014_x86_64 -w /pip_packages /pip_packages/foo-1.2.3-cp27-cp27mu-linux_x86_64.whl
 
 Keep the `manylinux` wheel and remove the `linux` wheel.
 
