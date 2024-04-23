@@ -1,7 +1,7 @@
 ayatane@chromium.org
-pprabhu@chromium.org
 xixuan@chromium.org
 
 include chromiumos/owners:v1:/infra/OWNERS.build
-include chromiumos/chromite:/OWNERS.ci
-include chromiumos/chromite:/OWNERS.testplatform
+include chromiumos/owners:v1:/infra/OWNERS.ci
+# For cbuildbot usage.
+include chromiumos/owners:v1:/infra/OWNERS.rbs
